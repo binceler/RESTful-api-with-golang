@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -50,7 +51,7 @@ func GetProductsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
 }
@@ -69,18 +70,46 @@ func GetProductHandler(w http.ResponseWriter, r *http.Request) {
 
 	data, err := json.Marshal(product)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
 
+// HTTP PUT- /api/product/{id}
 func PutProductHandler(w http.ResponseWriter, r *http.Request) {
+	var err error
+	vars := mux.Vars(r)
+	key := vars["id"]
+
+	var prodUpd Product
+	err = json.NewDecoder(r.Body).Decode(&prodUpd)
+	if err != nil {
+		log.Println(err)
+	}
+
+	if _, ok := productStore[key]; ok {
+		prodUpd.ID, _ = strconv.Atoi(key)
+		prodUpd.ChangedOn = time.Now()
+		delete(productStore, key)
+		productStore[key] = prodUpd
+	} else {
+		log.Printf("Değer Bulunamadı! %s", key)
+	}
+	w.WriteHeader(http.StatusOK)
 
 }
 
+// HTTP DELETE- /api/product/{id}
 func DeleteProductHandler(w http.ResponseWriter, r *http.Request) {
-
+	vars := mux.Vars(r)
+	key := vars["id"]
+	if _, ok := productStore[key]; ok {
+		delete(productStore, key)
+	} else {
+		log.Printf("Değer Bulunamadı! %s", key)
+	}
+	w.WriteHeader(http.StatusOK)
 }
